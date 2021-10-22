@@ -72,7 +72,7 @@ void setup()
       NULL,      /* parameter of the task */
       1,         /* priority of the task */
       &Task2,    /* Task handle to keep track of created task */
-      0);        /* pin task to core 1 */
+      1);        /* pin task to core 1 */
   delay(500);
 }
 
