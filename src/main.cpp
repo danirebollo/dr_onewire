@@ -80,6 +80,9 @@ void loop()
 {
 }
 
+int failedmessagecounter1=0;
+int failedmessagecounter2=0;
+
 void Task1code(void *pvParameters)
 {
   Serial.print("Task1 running on core ");
@@ -92,10 +95,16 @@ void Task1code(void *pvParameters)
     uint16_t message = 352;
     if(twdr2.sendmessage(message))
     {
-      Serial.print("Success sending message '"+(String)message+"' from twdr2 to twdr1");
+      Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
     }
-    delay(random(5000));
-
+    else
+    {
+      Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+      failedmessagecounter2++;
+    }
+    delay(random(1000));
+    twdr1.loop();
+    //delay(random(1000));
   }
 }
 
@@ -106,19 +115,35 @@ void Task2code(void *pvParameters)
   Serial.println(xPortGetCoreID());
 
   unsigned long latesttimer=millis();
-  uint8_t message=0;
+
   for (;;)
   {
-    uint8_t message = 111;
+    
     //twdr1.sendmessage_raw(message);
     //twdr1.readmessage_raw();
     twdr1.loop();
+    delay(random(1000));
 
-    //if(twdr1.readmessage_raw(&message))
-    //{
-    //  twdr1.sendmessage_raw(message);
-    //}
-    delay(500);
-    delay(200);
+    
+    uint16_t message = 1110;
+    if(twdr1.sendmessage(message))
+    {
+      Serial.print("## Success sending message '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter1+")\n");
+    }
+    else
+    {
+      Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter1+")\n");
+      failedmessagecounter1++;
+    }
+    
+
+    /*
+    uint8_t cmd = 0x01;
+    uint8_t message = 0x33;
+    if(twdr1.sendmessage(cmd, message))
+    {
+      Serial.print("## Success sending cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n");
+    }
+    */
   }
 }
