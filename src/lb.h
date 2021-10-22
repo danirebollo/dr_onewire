@@ -19,8 +19,9 @@ unsigned long tolerance = messagesymbolms / 3;
 
 private:
 public:
+    typedef uint16_t onewiremessage;
     int pin1;
-    uint8_t loopmessage;
+    onewiremessage loopmessage;
     String name0="";
     twowire_dr *currentclass;
     unsigned long buffer[50];
@@ -28,9 +29,10 @@ public:
     uint8_t buffercounter_low = 0;
     void (*isrcallback) (void);
     void init(String name, uint8_t wrpin,void (*f)(void));
-    void sendmessage_raw(uint8_t message);
-    bool sendmessage(uint8_t message);
-    bool readmessage_raw(uint8_t *message);
+    void sendmessage_raw(onewiremessage message);
+    bool sendmessage(onewiremessage message);
+    bool sendmessage(uint8_t cmd, uint8_t message);
+    bool readmessage_raw(onewiremessage *message);
     bool loop();
     void isr(); //static
     uint8_t getbuffersize();

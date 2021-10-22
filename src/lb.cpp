@@ -27,7 +27,7 @@ void twowire_dr::isr()
 }
 
 //send message
-void twowire_dr::sendmessage_raw(uint8_t message)
+void twowire_dr::sendmessage_raw(onewiremessage message)
 {
     detachInterrupt((pin1));
     pinMode(pin1, OUTPUT_OPEN_DRAIN);
@@ -39,9 +39,9 @@ void twowire_dr::sendmessage_raw(uint8_t message)
 
     //sending 8b data
     uint8_t parity = 0;
-    for (uint8_t i = 0; i < 8; i++)
+    for (uint8_t i = 0; i < (sizeof(onewiremessage)*8); i++)
     {
-        if (bitRead(message, 7 - i))
+        if (bitRead(message, (sizeof(onewiremessage)*8)-1 - i))
         {
             digitalWrite(pin1, HIGH);
             delay(messagesymbolms);
@@ -74,7 +74,7 @@ void twowire_dr::sendmessage_raw(uint8_t message)
     isrcallback();
 }
 
-bool twowire_dr::readmessage_raw(uint8_t *message)
+bool twowire_dr::readmessage_raw(onewiremessage *message)
 {
     if (getbuffersize() > 0 && (gettimesincefirstisr() > readtimer))
     {
@@ -82,8 +82,7 @@ bool twowire_dr::readmessage_raw(uint8_t *message)
         //Serial.print("("+(String)pin1+") readmessage_raw disabling ISR \nreading message\n");
         detachInterrupt((pin1));
         bool status = false;
-        uint8_t WORDSIZE = 13;
-        bool resultarray[WORDSIZE];
+        bool resultarray[(sizeof(onewiremessage)*8)+1+2+3]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
         uint8_t racounter = 0;
         for (uint8_t j = buffercounter_low + 1; j < buffercounter_high; j++)
         {
@@ -107,18 +106,19 @@ bool twowire_dr::readmessage_raw(uint8_t *message)
             Serial.print("Start OK \n");
         }
 
-        uint8_t aVal = 0;
+        onewiremessage aVal = 0;
 
-        for (uint8_t i = 0; i < 8; i++)
+        for (uint8_t i = 0; i < (sizeof(onewiremessage)*8); i++)
         {
             aVal = aVal << 1 | resultarray[i + 3];
         }
         Serial.print("Data: " + (String)aVal + "\n");
         message=&aVal;
 
-        if ((aVal % 2) == resultarray[11])
+        if ((aVal % 2) != resultarray[(sizeof(onewiremessage)*8)+3])
         {
-            Serial.print("PARITY OK\n");
+           // Serial.print("PARITY NOK\n");
+           result=false;
         }
 
         Serial.print("\n");
@@ -143,13 +143,14 @@ bool twowire_dr::readmessage_raw(uint8_t *message)
     }
 }
 
-bool twowire_dr::sendmessage(uint8_t message)
+
+bool twowire_dr::sendmessage(onewiremessage message)
 {
     bool result=false;
     sendmessage_raw(message);
     delay(200);
     unsigned long timer=millis();
-    uint8_t readedmessage=0;
+    onewiremessage readedmessage=0;
     while((millis()<timer+10000))
     {
         if(readmessage_raw(&readedmessage))
@@ -158,7 +159,7 @@ bool twowire_dr::sendmessage(uint8_t message)
             {
 
             }
-            Serial.print("sendmessage ACK: "+(String)readedmessage+"\n");
+            //Serial.print("sendmessage ACK: "+(String)readedmessage+"\n");
             result=true;
             break;
         }

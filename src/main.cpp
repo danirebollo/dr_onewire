@@ -89,7 +89,7 @@ void Task1code(void *pvParameters)
 
   for (;;)
   {
-    uint8_t message = 129;
+    uint16_t message = 352;
     if(twdr2.sendmessage(message))
     {
       Serial.print("Success sending message '"+(String)message+"' from twdr2 to twdr1");
