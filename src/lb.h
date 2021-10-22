@@ -8,9 +8,6 @@ class twowire_dr
 
 const int messagesymbolms = 20;
 
-unsigned long buffer[50];
-uint8_t buffercounter_high = 0;
-uint8_t buffercounter_low = 0;
 
 bool status = false;
 bool pinstatus = false;
@@ -19,10 +16,17 @@ unsigned long tolerance = messagesymbolms / 3;
 
 private:
 public:
-    void init(uint8_t wrpin);
+    int pin1;
+    String name0="";
+    twowire_dr *currentclass;
+    unsigned long buffer[50];
+    uint8_t buffercounter_high = 0;
+    uint8_t buffercounter_low = 0;
+    void (*isrcallback) (void);
+    void init(String name, uint8_t wrpin,void (*f)(void));
     void sendmessage(uint8_t message);
-    void readmessage();
-    void isr();
+    bool readmessage();
+    void isr(); //static
     uint8_t getbuffersize();
     unsigned long gettimesincefirstisr();
 };

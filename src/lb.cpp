@@ -1,13 +1,15 @@
 
 #include "lb.h"
 
-int pin1 = 5;
-const int pin2 = 18;
 
-void twowire_dr::init(uint8_t wrpin)
+void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void))
 {
+    isrcallback=*f;
+    currentclass=this;
+    name0=name;
     pin1=wrpin;
-    //attachInterrupt(wrpin, ((void)isr), CHANGE);
+    pinMode(pin1, INPUT_PULLUP);
+    isrcallback();
 }
 
 uint8_t twowire_dr::getbuffersize()
@@ -27,6 +29,8 @@ void twowire_dr::isr()
 //send message
 void twowire_dr::sendmessage(uint8_t message)
 {
+    detachInterrupt((pin1));
+    pinMode(pin1, OUTPUT_OPEN_DRAIN);
     //Start bits /sync
     digitalWrite(pin1, LOW);
     delay(messagesymbolms * 2);
@@ -66,12 +70,17 @@ void twowire_dr::sendmessage(uint8_t message)
     delay(messagesymbolms);
 
     digitalWrite(pin1, HIGH);
+    pinMode(pin1, INPUT_PULLUP);
+    isrcallback();
 }
 
-void twowire_dr::readmessage()
+bool twowire_dr::readmessage()
 {
     if (getbuffersize() > 0 && (gettimesincefirstisr() > readtimer))
     {
+        //TODO fix buffer to allow isr...
+        //Serial.print("("+(String)pin1+") readmessage disabling ISR \nreading message\n");
+        detachInterrupt((pin1));
         bool status = false;
         uint8_t WORDSIZE = 13;
         bool resultarray[WORDSIZE];
@@ -87,7 +96,7 @@ void twowire_dr::readmessage()
             }
             status = !status;
         }
-        Serial.print("bitarray: [");
+        Serial.print("readingmessage on "+name0+": bitarray: [");
         for (uint8_t k = 0; k < WORDSIZE; k++)
         {
             Serial.print("" + (String)resultarray[k] + (String) "");
@@ -117,9 +126,17 @@ void twowire_dr::readmessage()
         //enabling ISR
 
         Serial.print("ReadTask: Done\n");
+
+        //TODO fix buffer to allow isr...
+        
+        //Serial.print("("+(String)pin1+") readmessage Enabling ISR \n");
+        pinMode(pin1, INPUT_PULLUP);
+        isrcallback();
+        return true;
     }
     else
     {
-        delay(100);
+        delay(500);
+        return false;
     }
 }
