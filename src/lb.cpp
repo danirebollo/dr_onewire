@@ -27,7 +27,7 @@ void twowire_dr::isr()
 }
 
 //send message
-void twowire_dr::sendmessage(uint8_t message)
+void twowire_dr::sendmessage_raw(uint8_t message)
 {
     detachInterrupt((pin1));
     pinMode(pin1, OUTPUT_OPEN_DRAIN);
@@ -74,12 +74,12 @@ void twowire_dr::sendmessage(uint8_t message)
     isrcallback();
 }
 
-bool twowire_dr::readmessage()
+bool twowire_dr::readmessage_raw(uint8_t *message)
 {
     if (getbuffersize() > 0 && (gettimesincefirstisr() > readtimer))
     {
         //TODO fix buffer to allow isr...
-        //Serial.print("("+(String)pin1+") readmessage disabling ISR \nreading message\n");
+        //Serial.print("("+(String)pin1+") readmessage_raw disabling ISR \nreading message\n");
         detachInterrupt((pin1));
         bool status = false;
         uint8_t WORDSIZE = 13;
@@ -114,6 +114,8 @@ bool twowire_dr::readmessage()
             aVal = aVal << 1 | resultarray[i + 3];
         }
         Serial.print("Data: " + (String)aVal + "\n");
+        message=&aVal;
+
         if ((aVal % 2) == resultarray[11])
         {
             Serial.print("PARITY OK\n");
@@ -129,7 +131,7 @@ bool twowire_dr::readmessage()
 
         //TODO fix buffer to allow isr...
         
-        //Serial.print("("+(String)pin1+") readmessage Enabling ISR \n");
+        //Serial.print("("+(String)pin1+") readmessage_raw Enabling ISR \n");
         pinMode(pin1, INPUT_PULLUP);
         isrcallback();
         return true;
@@ -139,4 +141,37 @@ bool twowire_dr::readmessage()
         delay(500);
         return false;
     }
+}
+
+bool twowire_dr::sendmessage(uint8_t message)
+{
+    bool result=false;
+    sendmessage_raw(message);
+    delay(200);
+    unsigned long timer=millis();
+    uint8_t readedmessage=0;
+    while((millis()<timer+10000))
+    {
+        if(readmessage_raw(&readedmessage))
+        {
+            if(readedmessage==ACKMESSAGE)
+            {
+
+            }
+            Serial.print("sendmessage ACK: "+(String)readedmessage+"\n");
+            result=true;
+            break;
+        }
+    }
+    return result;
+}
+
+
+bool twowire_dr::loop()
+{
+    if(readmessage_raw(&loopmessage))
+    {
+      sendmessage_raw(ACKMESSAGE);
+    }
+    delay(300);
 }

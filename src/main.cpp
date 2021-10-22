@@ -90,16 +90,12 @@ void Task1code(void *pvParameters)
   for (;;)
   {
     uint8_t message = 129;
-    twdr2.sendmessage(message);
-    //twdr2.readmessage();
-    delay(random(5)*1000+1000);
-    delay(500);
-    delay(200);
-    //twdr2.readmessage();
-    while(!twdr2.readmessage())
+    if(twdr2.sendmessage(message))
     {
-
+      Serial.print("Success sending message '"+(String)message+"' from twdr2 to twdr1");
     }
+    delay(random(5000));
+
   }
 }
 
@@ -110,16 +106,18 @@ void Task2code(void *pvParameters)
   Serial.println(xPortGetCoreID());
 
   unsigned long latesttimer=millis();
+  uint8_t message=0;
   for (;;)
   {
     uint8_t message = 111;
-    //twdr1.sendmessage(message);
-    //twdr1.readmessage();
+    //twdr1.sendmessage_raw(message);
+    //twdr1.readmessage_raw();
+    twdr1.loop();
 
-    if(twdr1.readmessage())
-    {
-      twdr1.sendmessage(message);
-    }
+    //if(twdr1.readmessage_raw(&message))
+    //{
+    //  twdr1.sendmessage_raw(message);
+    //}
     delay(500);
     delay(200);
   }
