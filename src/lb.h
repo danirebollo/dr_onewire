@@ -18,6 +18,13 @@ unsigned long readtimer = (20 * messagesymbolms);
 unsigned long tolerance = messagesymbolms / 3;
 
 private:
+    void detachinterrupt();
+    void setpin2inputpullup();
+    void setpin2outputopendrain();
+    
+    void setpinlow();
+    void setpinhigh();
+
 public:
     typedef uint16_t onewiremessage;
     int pin1;
