@@ -17,6 +17,13 @@ const int led1 = 2;
 const int pin1 = 5;
 const int pin2 = 18;
 
+twowire_dr twdr1;
+twowire_dr twdr2;
+
+void isr()
+{
+  twdr1.isr();
+}
 ////////////////////////////////////////////////
 void setup()
 {
@@ -50,6 +57,9 @@ void setup()
       &Task2,    /* Task handle to keep track of created task */
       1);        /* pin task to core 1 */
   delay(500);
+
+  twdr1.init(pin2);
+  twdr2.init(pin1);
   attachInterrupt(pin2, isr, CHANGE);
 }
 
@@ -65,7 +75,7 @@ void Task1code(void *pvParameters)
   for (;;)
   {
     uint8_t message = 129;
-    sendmessage(message);
+    twdr2.sendmessage(message);
     delay(5000);
   }
 }
@@ -78,6 +88,6 @@ void Task2code(void *pvParameters)
 
   for (;;)
   {
-    readmessage();
+    twdr1.readmessage();
   }
 }

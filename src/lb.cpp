@@ -1,36 +1,31 @@
 
 #include "lb.h"
 
-const int led1 = 2;
-const int pin1 = 5;
+int pin1 = 5;
 const int pin2 = 18;
-const int messagesymbolms = 20;
 
-unsigned long buffer[50];
-uint8_t buffercounter_high = 0;
-uint8_t buffercounter_low = 0;
+void twowire_dr::init(uint8_t wrpin)
+{
+    pin1=wrpin;
+    //attachInterrupt(wrpin, ((void)isr), CHANGE);
+}
 
-bool status = false;
-bool pinstatus = false;
-unsigned long readtimer = (20 * messagesymbolms);
-unsigned long tolerance = messagesymbolms / 3;
-
-uint8_t getbuffersize()
+uint8_t twowire_dr::getbuffersize()
 {
     return buffercounter_high - buffercounter_low;
 }
-unsigned long gettimesincefirstisr()
+unsigned long twowire_dr::gettimesincefirstisr()
 {
     return millis() - buffer[buffercounter_low];
 }
-void isr()
+void twowire_dr::isr()
 {
     buffer[buffercounter_high] = millis();
     buffercounter_high++;
 }
 
 //send message
-void sendmessage(uint8_t message)
+void twowire_dr::sendmessage(uint8_t message)
 {
     //Start bits /sync
     digitalWrite(pin1, LOW);
@@ -73,7 +68,7 @@ void sendmessage(uint8_t message)
     digitalWrite(pin1, HIGH);
 }
 
-void readmessage()
+void twowire_dr::readmessage()
 {
     if (getbuffersize() > 0 && (gettimesincefirstisr() > readtimer))
     {
