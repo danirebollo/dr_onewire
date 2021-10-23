@@ -1,39 +1,39 @@
 
-#include "lb.h"
+#include "dr_onewire.h"
 //HAL
-void twowire_dr::detachinterrupt()
+void dr_onewire::detachinterrupt()
 {
     detachInterrupt(pin1);
 }
 
-void twowire_dr::setpin2inputpullup()
+void dr_onewire::setpin2inputpullup()
 {
     pinMode(pin1, INPUT_PULLUP);
 }
-void twowire_dr::setpin2outputopendrain()
+void dr_onewire::setpin2outputopendrain()
 {
     pinMode(pin1, OUTPUT_OPEN_DRAIN);
 }
-void twowire_dr::setpinlow()
+void dr_onewire::setpinlow()
 {
     digitalWrite(pin1, LOW);
 }
-void twowire_dr::setpinhigh()
+void dr_onewire::setpinhigh()
 {
     digitalWrite(pin1, HIGH);
 }
-bool twowire_dr::getpinstatus()
+bool dr_onewire::getpinstatus()
 {
     return digitalRead(pin1);
 }
 
 //!HAL
-void twowire_dr::emptybuffer()
+void dr_onewire::emptybuffer()
 {
     buffercounter_high = 0;
         buffercounter_low = 0;
 }
-void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void),void (*f2)(onewiremessage))
+void dr_onewire::init(String name, uint8_t wrpin, void (*f)(void),void (*f2)(onewiremessage))
 {
     isrcallback=*f;
     receivedmessagecallback=*f2;
@@ -44,19 +44,19 @@ void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void),void (*f2)(one
     isrcallback();
 }
 
-uint8_t twowire_dr::isbufferempty()
+uint8_t dr_onewire::isbufferempty()
 {
    if (getbuffersize() >1) 
    return false;
    else
    return true;
 }
-uint8_t twowire_dr::getbuffersize()
+uint8_t dr_onewire::getbuffersize()
 {
     return buffercounter_high - buffercounter_low;
 }
 
-void twowire_dr::showbuffercontent()
+void dr_onewire::showbuffercontent()
 {
     Serial.print("shoubuffercontent: ");
     for(uint8_t i=buffercounter_low;i<buffercounter_high;i++)
@@ -64,18 +64,18 @@ void twowire_dr::showbuffercontent()
         Serial.print((String)i+": "+(String)buffer[i]+"\n");
     }
 }
-unsigned long twowire_dr::gettimesincefirstisr()
+unsigned long dr_onewire::gettimesincefirstisr()
 {
     return millis() - buffer[buffercounter_low];
 }
-void twowire_dr::isr()
+void dr_onewire::isr()
 {
     buffer[buffercounter_high] = millis();
     buffercounter_high++;
 }
 
 //send message
-void twowire_dr::sendmessage_raw(onewiremessage message)
+void dr_onewire::sendmessage_raw(onewiremessage message)
 {
     detachinterrupt();
     setpin2outputopendrain();
@@ -122,7 +122,7 @@ void twowire_dr::sendmessage_raw(onewiremessage message)
     isrcallback();
 }
 
-bool twowire_dr::readmessage_raw(onewiremessage *message)
+bool dr_onewire::readmessage_raw(onewiremessage *message)
 {
     if (getbuffersize() > 0 && (gettimesincefirstisr() > readtimer))
     {
@@ -206,12 +206,12 @@ bool twowire_dr::readmessage_raw(onewiremessage *message)
     }
 }
 
-bool twowire_dr::sendmessage(uint8_t cmd, uint8_t message)
+bool dr_onewire::sendmessage(uint8_t cmd, uint8_t message)
 {
     return sendmessage(((uint16_t)message << 8) | cmd);
 }
 
-bool twowire_dr::sendmessage(onewiremessage message)
+bool dr_onewire::sendmessage(onewiremessage message)
 {
     delay(messagesymbolms*8);
     bool result=true;
@@ -285,7 +285,7 @@ bool twowire_dr::sendmessage(onewiremessage message)
 }
 
 
-bool twowire_dr::loop()
+bool dr_onewire::loop()
 {
     if(readmessage_raw(&loopmessage))
     {

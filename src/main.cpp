@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "lb.h"
+#include "dr_onewire.h"
 
 #define LED 2
 TaskHandle_t Task1;
@@ -18,8 +18,8 @@ const int led1 = 2;
 const int pin02 = 5;
 const int pin01 = 4;
 
-twowire_dr twdr1;
-twowire_dr twdr2;
+dr_onewire twdr1;
+dr_onewire twdr2;
 
 void isr01()
 {
@@ -41,14 +41,14 @@ void attach02()
 }
 
 ////////////////////////////////////////////////
-void receivedmessagecallback1(twowire_dr::onewiremessage message)
+void receivedmessagecallback1(dr_onewire::onewiremessage message)
 {
   uint8_t message8=highByte(message);
   uint8_t cmd=lowByte(message);
 
     Serial.println("CB1: Received message: "+(String)message+" (cmd:"+(String)cmd+" / message:"+(String)message8+")");  
 }
-void receivedmessagecallback2(twowire_dr::onewiremessage message)
+void receivedmessagecallback2(dr_onewire::onewiremessage message)
 {
   uint8_t message8=highByte(message);
   uint8_t cmd=lowByte(message);

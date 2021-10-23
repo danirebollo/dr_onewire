@@ -6,7 +6,7 @@
 
 #define ACKMESSAGE 222
 
-class twowire_dr
+class dr_onewire
 {
 
 const int messagesymbolms = 30;
@@ -34,7 +34,7 @@ public:
     int pin1;
     onewiremessage loopmessage;
     String name0="";
-    twowire_dr *currentclass;
+    dr_onewire *currentclass;
     unsigned long buffer[50];
     uint8_t buffercounter_high = 0;
     uint8_t buffercounter_low = 0;
