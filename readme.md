@@ -1,5 +1,5 @@
 # Introduction #
-This is a bidirectional one wire interface between microcontrollers. It is not the best way to interconnect, I preffer I2C, SPI, CAN or other robust protocols, but I needed to use one wire sometimes so I did this. <br>
+This is a bidirectional one wire interface between microcontrollers (ESP32 currently supported). It is not the best way to interconnect, I preffer I2C, SPI, CAN or other robust protocols, but I needed to use one wire sometimes so I did this. <br>
  <br>
 I'm improving this over the time so please put some issue on github if you found some bug. <br>
 
