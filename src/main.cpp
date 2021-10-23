@@ -41,6 +41,21 @@ void attach02()
 }
 
 ////////////////////////////////////////////////
+void receivedmessagecallback1(twowire_dr::onewiremessage message)
+{
+  uint8_t message8=highByte(message);
+  uint8_t cmd=lowByte(message);
+
+    Serial.println("CB1: Received message: "+(String)message+" (cmd:"+(String)cmd+" / message:"+(String)message8+")");  
+}
+void receivedmessagecallback2(twowire_dr::onewiremessage message)
+{
+  uint8_t message8=highByte(message);
+  uint8_t cmd=lowByte(message);
+
+    Serial.println("CB2: Received message: "+(String)message+" (cmd:"+(String)cmd+" / message:"+(String)message8+")");  
+}
+
 void setup()
 {
   // Set pin mode
@@ -50,8 +65,8 @@ void setup()
   Serial.print("setup() running on core ");
   Serial.println(xPortGetCoreID());
 
-  twdr1.init("twdr1",pin01,attach01);
-  twdr2.init("twdr2",pin02,attach02);
+  twdr1.init("twdr1",pin01,attach01,receivedmessagecallback1);
+  twdr2.init("twdr2",pin02,attach02,receivedmessagecallback2);
 
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(

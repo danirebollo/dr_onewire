@@ -33,9 +33,10 @@ void twowire_dr::emptybuffer()
     buffercounter_high = 0;
         buffercounter_low = 0;
 }
-void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void))
+void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void),void (*f2)(onewiremessage))
 {
     isrcallback=*f;
+    receivedmessagecallback=*f2;
     currentclass=this;
     name0=name;
     pin1=wrpin;
@@ -290,6 +291,7 @@ bool twowire_dr::loop()
     {
         Serial.print((String)millis()+" - "+(String)pin1+" - loop sending ack \n");  
       sendmessage_raw(ACKMESSAGE);
+        receivedmessagecallback(loopmessage);
     }
 
     delay(messagesymbolms*8);

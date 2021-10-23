@@ -39,7 +39,8 @@ public:
     uint8_t buffercounter_high = 0;
     uint8_t buffercounter_low = 0;
     void (*isrcallback) (void);
-    void init(String name, uint8_t wrpin,void (*f)(void));
+    void (*receivedmessagecallback) (onewiremessage);
+    void init(String name, uint8_t wrpin,void (*f)(void),void (*f2)(onewiremessage));
     void sendmessage_raw(onewiremessage message);
     bool sendmessage(onewiremessage message);
     bool sendmessage(uint8_t cmd, uint8_t message);
