@@ -133,18 +133,28 @@ bool twowire_dr::readmessage_raw(onewiremessage *message)
         }
         
 
-        onewiremessage aVal = 0;
-
+        onewiremessage aVal = 0;    
+        //Serial.print("Readed bits: ");
+        uint8_t parity=0;
         for (uint8_t i = 0; i < (sizeof(onewiremessage)*8); i++)
         {
             aVal = aVal << 1 | resultarray[i + 3];
+            //Serial.print((String)resultarray[i + 3] + "");
+            if(resultarray[i + 3]==1)
+            parity++;
         }
-        //Serial.print("Data: " + (String)aVal + "\n");
-        message=&aVal;
+        //Serial.print(" \n");
 
-        if ((aVal % 2) != resultarray[(sizeof(onewiremessage)*8)+3])
+        //Serial.print("Readed Data: " + (String)aVal + "\n");
+        *message=aVal;
+
+        //Serial.print("("+(String)pin1+") Readed Data: " + (String)aVal + "/ "+(String)*message+"\n");
+        
+        //Serial.print("PARITY READED: "+(String)resultarray[(sizeof(onewiremessage)*8)+3]+", calculated: "+parity+" ("+(String)(parity % 2)+") \n");
+
+        if ((!(parity % 2)) != resultarray[(sizeof(onewiremessage)*8)+3])
         {
-           // Serial.print("PARITY NOK\n");
+           //Serial.print("PARITY NOK\n");
            result=false;
         }
 
@@ -177,22 +187,59 @@ bool twowire_dr::sendmessage(uint8_t cmd, uint8_t message)
 
 bool twowire_dr::sendmessage(onewiremessage message)
 {
-    bool result=false;
-    sendmessage_raw(message);
-    delay(200);
-    unsigned long timer=millis();
-    onewiremessage readedmessage=0;
-    while((millis()<timer+10000))
-    {
-        if(readmessage_raw(&readedmessage))
-        {
-            if(readedmessage==ACKMESSAGE)
-            {
+   bool result=true;
+   unsigned long timer=millis();
+   //Serial.print("sendmessage ("+(String)pin1+") sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
+       
+   while(getbuffersize() != 0)
+   {
+       //Serial.print("sendmessage ("+(String)pin1+") emptying buffer before sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
+       loop();
+       if(timer+20000<millis())
+       {
+           Serial.print("sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)message+"\n");
+           result=false;
+           break;
+       }
+   }
 
+    if(result)
+    {
+        result=false;
+        sendmessage_raw(message);
+        delay(200);
+
+        timer=millis();
+        uint16_t readedmessage=0;
+        bool timeout=false;
+        int counter=0;
+        while(!timeout)
+        {
+            bool a1=readmessage_raw(&readedmessage);
+            if(a1)
+            {
+                if(readedmessage==ACKMESSAGE)
+                {
+                    result=true;
+                    break;
+                }
+                else
+                {
+                    Serial.print("sendmessage ("+(String)pin1+") ACK error. received message "+(String)readedmessage+"\n");
+                    result=false;
+                }
             }
-            //Serial.print("sendmessage ACK: "+(String)readedmessage+"\n");
-            result=true;
-            break;
+            if(millis()>timer+10000)
+                timeout=true;
+            
+            Serial.print("sendmessage loop ("+(String)pin1+") readed: "+(String)readedmessage+", bool: "+a1+", counter: "+(String)counter+"\n");
+            counter++;
+        }
+        //Serial.print("sendmessage ("+(String)pin1+") received message "+(String)readedmessage+"\n");
+                
+        if(timeout)
+        {
+            Serial.print("sendmessage ("+(String)pin1+") timeour error. no received message \n");     
         }
     }
     return result;
