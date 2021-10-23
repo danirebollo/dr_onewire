@@ -115,12 +115,12 @@ uint16_t message = 1;
       
       if(twdr2.sendmessage(message))
       {
-        //Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+        Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
       }
       else
       {
         delay(random(500));
-        //Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+        Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
         failedmessagecounter2++;
       }
       message++;
@@ -137,35 +137,31 @@ void Task2code(void *pvParameters)
   Serial.println(xPortGetCoreID());
 
   unsigned long latesttimer=millis();
-uint16_t message = 350;
+//uint16_t message = 350;
+uint8_t message = 0x33;
   for (;;)
   {
     //delay(200);
     twdr1.loop();
     if(latesttimer+(random(1000)+1000)<millis())
     {
+      uint8_t cmd = 0x01;
       
-      if(twdr1.sendmessage(message))
+      if(twdr1.sendmessage(cmd, message))
+      //if(twdr1.sendmessage(message))
       {
         //Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+        Serial.print("## Success sending cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
       }
       else
       {
         delay(random(500));
         //Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+        Serial.print("## CAUTION!! LOST MESSAGE cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
         failedmessagecounter1++;
       }
       latesttimer=millis();
       message++;
     }
-
-    /*
-    uint8_t cmd = 0x01;
-    uint8_t message = 0x33;
-    if(twdr1.sendmessage(cmd, message))
-    {
-      Serial.print("## Success sending cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n");
-    }
-    */
   }
 }

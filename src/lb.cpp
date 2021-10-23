@@ -220,7 +220,7 @@ bool twowire_dr::sendmessage(onewiremessage message)
     bool timeout=false;
     int counter=0;
 
-   Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
+   //Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
        
    while(getbuffersize() >1 || !getpinstatus())
    {
@@ -276,10 +276,10 @@ bool twowire_dr::sendmessage(onewiremessage message)
         }
     }
 
-    if(result)
-        Serial.print((String)millis()+" - "+(String)pin1+" - # Success sending message '"+(String)message+"'\n\n");
-    else
-        Serial.print((String)millis()+" - "+(String)pin1+" - ## CAUTION!! LOST MESSAGE '"+(String)message+"' \n");
+    //if(result)
+    //    Serial.print((String)millis()+" - "+(String)pin1+" - # Success sending message '"+(String)message+"'\n\n");
+    //else
+    //    Serial.print((String)millis()+" - "+(String)pin1+" - ## CAUTION!! LOST MESSAGE '"+(String)message+"' \n");
     
     return result;
 }
@@ -289,8 +289,8 @@ bool twowire_dr::loop()
 {
     if(readmessage_raw(&loopmessage))
     {
-        Serial.print((String)millis()+" - "+(String)pin1+" - loop sending ack \n");  
-      sendmessage_raw(ACKMESSAGE);
+        //Serial.print((String)millis()+" - "+(String)pin1+" - loop sending ack \n");  
+        sendmessage_raw(ACKMESSAGE);  
         receivedmessagecallback(loopmessage);
     }
 
