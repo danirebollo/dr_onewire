@@ -28,7 +28,11 @@ bool twowire_dr::getpinstatus()
 }
 
 //!HAL
-
+void twowire_dr::emptybuffer()
+{
+    buffercounter_high = 0;
+        buffercounter_low = 0;
+}
 void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void))
 {
     isrcallback=*f;
@@ -39,9 +43,25 @@ void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void))
     isrcallback();
 }
 
+uint8_t twowire_dr::isbufferempty()
+{
+   if (getbuffersize() >1) 
+   return false;
+   else
+   return true;
+}
 uint8_t twowire_dr::getbuffersize()
 {
     return buffercounter_high - buffercounter_low;
+}
+
+void twowire_dr::showbuffercontent()
+{
+    Serial.print("shoubuffercontent: ");
+    for(uint8_t i=buffercounter_low;i<buffercounter_high;i++)
+    {
+        Serial.print((String)i+": "+(String)buffer[i]+"\n");
+    }
 }
 unsigned long twowire_dr::gettimesincefirstisr()
 {
@@ -164,8 +184,7 @@ bool twowire_dr::readmessage_raw(onewiremessage *message)
         }
 
         //Serial.print("\n");
-        buffercounter_high = 0;
-        buffercounter_low = 0;
+        
 
         //enabling ISR
 
@@ -173,14 +192,15 @@ bool twowire_dr::readmessage_raw(onewiremessage *message)
 
         //TODO fix buffer to allow isr...
         
-        //Serial.print("("+(String)pin1+") readmessage_raw Enabling ISR \n");
-        setpin2inputpullup();
-        isrcallback();
+                isrcallback();
+        delay(50);
+        emptybuffer();
+        
         return result;
     }
     else
     {
-        delay(500);
+        *message=0;
         return false;
     }
 }
@@ -192,33 +212,38 @@ bool twowire_dr::sendmessage(uint8_t cmd, uint8_t message)
 
 bool twowire_dr::sendmessage(onewiremessage message)
 {
-   bool result=true;
-   unsigned long timer=millis();
+    delay(messagesymbolms*8);
+    bool result=true;
+    unsigned long timer=millis();
+    uint16_t readedmessage=0;
+    bool timeout=false;
+    int counter=0;
 
    Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
        
    while(getbuffersize() >1 || !getpinstatus())
    {
-       //Serial.print("sendmessage ("+(String)pin1+") emptying buffer before sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
+       delay(100);
+       //Serial.print((String)millis()+" - "+"sendmessage ("+(String)pin1+") emptying buffer before sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
        loop();
+       delay(100);
        if(timer+20000<millis())
        {
-           Serial.print("sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)message+"\n");
+           Serial.print((String)millis()+" - "+"sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)message+"\n");
            result=false;
            break;
        }
    }
+   
+    //Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 2 sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
 
     if(result)
     {
         result=false;
         sendmessage_raw(message);
-        delay(200);
+        delay(messagesymbolms*8);
 
         timer=millis();
-        uint16_t readedmessage=0;
-        bool timeout=false;
-        int counter=0;
         while(!timeout)
         {
             bool a1=readmessage_raw(&readedmessage);
@@ -231,23 +256,30 @@ bool twowire_dr::sendmessage(onewiremessage message)
                 }
                 else
                 {
-                    Serial.print("sendmessage ("+(String)pin1+") ACK error. received message "+(String)readedmessage+"\n");
+                    Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage ACK error. received message "+(String)readedmessage+"\n");
                     result=false;
                 }
             }
-            if(millis()>timer+10000)
+            if(millis()>timer+3000)
                 timeout=true;
             
-            Serial.print("sendmessage loop ("+(String)pin1+") readed: "+(String)readedmessage+", bool: "+a1+", counter: "+(String)counter+"\n");
+            if(readedmessage!=0 )
+                Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage loop readed: "+(String)readedmessage+", bool: "+a1+", counter: "+(String)counter+"\n");
             counter++;
         }
         //Serial.print("sendmessage ("+(String)pin1+") received message "+(String)readedmessage+"\n");
                 
         if(timeout)
         {
-            Serial.print("sendmessage ("+(String)pin1+") timeour error. no received message \n");     
+            Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage timeour error. no received message \n");     
         }
     }
+
+    if(result)
+        Serial.print((String)millis()+" - "+(String)pin1+" - # Success sending message '"+(String)message+"'\n\n");
+    else
+        Serial.print((String)millis()+" - "+(String)pin1+" - ## CAUTION!! LOST MESSAGE '"+(String)message+"' \n");
+    
     return result;
 }
 
@@ -256,7 +288,10 @@ bool twowire_dr::loop()
 {
     if(readmessage_raw(&loopmessage))
     {
+        Serial.print((String)millis()+" - "+(String)pin1+" - loop sending ack \n");  
       sendmessage_raw(ACKMESSAGE);
     }
-    //delay(300);
+
+    delay(messagesymbolms*8);
+    return true;
 }

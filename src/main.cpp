@@ -62,7 +62,7 @@ void setup()
       1,         /* priority of the task */
       &Task1,    /* Task handle to keep track of created task */
       0);        /* pin task to core 0 */
-  delay(500);
+  //delay(500);
 
 //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
@@ -89,21 +89,28 @@ void Task1code(void *pvParameters)
   Serial.println(xPortGetCoreID());
   
   unsigned long latesttimer=millis();
-
+uint16_t message = 1;
   for (;;)
   {
-    uint16_t message = 352;
-    if(twdr2.sendmessage(message))
-    {
-      Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
-    }
-    else
-    {
-      Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
-      failedmessagecounter2++;
-    }
-    delay(random(1000));
+    
+    //delay(200);
     twdr2.loop();
+    if(latesttimer+(random(1000)+500)<millis())
+    {
+      
+      if(twdr2.sendmessage(message))
+      {
+        //Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+      }
+      else
+      {
+        delay(random(500));
+        //Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+        failedmessagecounter2++;
+      }
+      message++;
+      latesttimer=millis();
+    }
     //delay(random(1000));
   }
 }
@@ -115,27 +122,27 @@ void Task2code(void *pvParameters)
   Serial.println(xPortGetCoreID());
 
   unsigned long latesttimer=millis();
-
+uint16_t message = 350;
   for (;;)
   {
-    
-    //twdr1.sendmessage_raw(message);
-    //twdr1.readmessage_raw();
+    //delay(200);
     twdr1.loop();
-    delay(random(1000));
-
-    
-    uint16_t message = 1110;
-    if(twdr1.sendmessage(message))
+    if(latesttimer+(random(1000)+1000)<millis())
     {
-      Serial.print("## Success sending message '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter1+")\n");
+      
+      if(twdr1.sendmessage(message))
+      {
+        //Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+      }
+      else
+      {
+        delay(random(500));
+        //Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
+        failedmessagecounter1++;
+      }
+      latesttimer=millis();
+      message++;
     }
-    else
-    {
-      Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter1+")\n");
-      failedmessagecounter1++;
-    }
-    
 
     /*
     uint8_t cmd = 0x01;

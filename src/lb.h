@@ -9,13 +9,14 @@
 class twowire_dr
 {
 
-const int messagesymbolms = 20;
+const int messagesymbolms = 30;
 
 
 bool status = false;
 bool pinstatus = false;
 unsigned long readtimer = (20 * messagesymbolms);
 unsigned long tolerance = messagesymbolms / 3;
+
 
 private:
     void detachinterrupt();
@@ -25,6 +26,9 @@ private:
     void setpinlow();
     void setpinhigh();
     bool getpinstatus();
+    void showbuffercontent();
+    uint8_t isbufferempty();
+    void emptybuffer();
 public:
     typedef uint16_t onewiremessage;
     int pin1;
