@@ -24,7 +24,7 @@ private:
     
     void setpinlow();
     void setpinhigh();
-
+    bool getpinstatus();
 public:
     typedef uint16_t onewiremessage;
     int pin1;

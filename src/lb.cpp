@@ -22,6 +22,11 @@ void twowire_dr::setpinhigh()
 {
     digitalWrite(pin1, HIGH);
 }
+bool twowire_dr::getpinstatus()
+{
+    return digitalRead(pin1);
+}
+
 //!HAL
 
 void twowire_dr::init(String name, uint8_t wrpin, void (*f)(void))
@@ -189,9 +194,10 @@ bool twowire_dr::sendmessage(onewiremessage message)
 {
    bool result=true;
    unsigned long timer=millis();
-   //Serial.print("sendmessage ("+(String)pin1+") sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
+
+   Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
        
-   while(getbuffersize() != 0)
+   while(getbuffersize() >1 || !getpinstatus())
    {
        //Serial.print("sendmessage ("+(String)pin1+") emptying buffer before sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
        loop();
