@@ -211,7 +211,43 @@ bool dr_onewire::sendmessage(uint8_t cmd, uint8_t message)
     return sendmessage(((uint16_t)message << 8) | cmd);
 }
 
+
+bool dr_onewire::sendmessage_addtobuff(onewiremessage message)
+{
+    messagebuffpos++;
+    if(messagebuffpos>=messagebufflen)
+    {
+        return false;
+    }
+    messagebuff[messagebuffpos]=message;
+    
+    return true;
+}
+bool dr_onewire::sendmessage_getfrombuff(onewiremessage *message)
+{
+    if(messagebuffpos>0)
+    {
+        *message=messagebuff[messagebuffpos];
+        messagebuffpos--;
+        return true;
+    }
+    return false;
+}
+uint8_t dr_onewire::sendmessage_getbuffpos()
+{
+    return messagebuffpos;
+}
 bool dr_onewire::sendmessage(onewiremessage message)
+{
+    if(!sendmessage_addtobuff(message))
+    {
+        Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage ERROR 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
+        return false;
+    }
+    return true;
+}
+
+bool dr_onewire::sendmessage_r(onewiremessage message)
 {
     delay(messagesymbolms*8);
     bool result=true;
@@ -220,7 +256,7 @@ bool dr_onewire::sendmessage(onewiremessage message)
     bool timeout=false;
     int counter=0;
 
-   //Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
+   //Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
        
    while(getbuffersize() >1 || !getpinstatus())
    {
@@ -230,7 +266,7 @@ bool dr_onewire::sendmessage(onewiremessage message)
        delay(100);
        if(timer+20000<millis())
        {
-           Serial.print((String)millis()+" - "+"sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)message+"\n");
+           Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+"sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)message+"\n");
            result=false;
            break;
        }
@@ -257,30 +293,42 @@ bool dr_onewire::sendmessage(onewiremessage message)
                 }
                 else
                 {
-                    Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage ACK error. received message "+(String)readedmessage+"\n");
-                    result=false;
+                    //Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage ACK error. received message "+(String)readedmessage+"\n");
+                    //Serial.print((String)readedmessage+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage sending ACK."+"\n");            
+                    sendmessage_raw(ACKMESSAGE);  
+                    receivedmessagecallback(readedmessage);
+                    delay(messagesymbolms*8);
+                    return false;
                 }
             }
-            if(millis()>timer+3000)
+
+
+            if(millis()>timer+10000)
+            {
                 timeout=true;
+                Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage TIMEOUT, message: "+(String)message+"\n");      
+            }
+                
             
-            if(readedmessage!=0 )
-                Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage loop readed: "+(String)readedmessage+", bool: "+a1+", counter: "+(String)counter+"\n");
+            //if(readedmessage!=0 )
+            //    Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage loop readed: "+(String)readedmessage+", bool: "+a1+", counter: "+(String)counter+"\n");
             counter++;
+            delay(500);
         }
         //Serial.print("sendmessage ("+(String)pin1+") received message "+(String)readedmessage+"\n");
                 
         if(timeout)
         {
-            Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage timeour error. no received message \n");     
+            Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage timeour error. no received message \n");     
         }
     }
 
-    //if(result)
-    //    Serial.print((String)millis()+" - "+(String)pin1+" - # Success sending message '"+(String)message+"'\n\n");
-    //else
-    //    Serial.print((String)millis()+" - "+(String)pin1+" - ## CAUTION!! LOST MESSAGE '"+(String)message+"' \n");
-    
+    if(!result)
+    {
+        Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage READDING TO SEND BUF message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
+        sendmessage_addtobuff(message);
+    }
+
     return result;
 }
 
@@ -289,11 +337,20 @@ bool dr_onewire::loop()
 {
     if(readmessage_raw(&loopmessage))
     {
-        //Serial.print((String)millis()+" - "+(String)pin1+" - loop sending ack \n");  
+        //Serial.print((String)loopmessage+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sending ack \n");  
         sendmessage_raw(ACKMESSAGE);  
+        //Serial.print((String)loopmessage+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+" end receiving message '"+loopmessage+"'\n"); 
         receivedmessagecallback(loopmessage);
     }
-
+    else{
+        onewiremessage message;
+        if(sendmessage_getfrombuff(&message))
+        {
+            sendmessage_r(message);
+            //Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage ERROR 2 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
+        }
+    }
+    
     delay(messagesymbolms*8);
     return true;
 }

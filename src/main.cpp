@@ -107,21 +107,14 @@ void Task1code(void *pvParameters)
 uint16_t message = 1;
   for (;;)
   {
-    
-    //delay(200);
     twdr2.loop();
     if(latesttimer+(random(1000)+500)<millis())
     {
       
       if(twdr2.sendmessage(message))
       {
-        Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
-      }
-      else
-      {
-        delay(random(500));
-        Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
-        failedmessagecounter2++;
+        Serial.print("# Success sending message to buffer '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
+      
       }
       message++;
       latesttimer=millis();
@@ -137,8 +130,8 @@ void Task2code(void *pvParameters)
   Serial.println(xPortGetCoreID());
 
   unsigned long latesttimer=millis();
-//uint16_t message = 350;
-uint8_t message = 0x33;
+uint16_t message = 350;
+//uint8_t message = 0x33;
   for (;;)
   {
     //delay(200);
@@ -147,18 +140,11 @@ uint8_t message = 0x33;
     {
       uint8_t cmd = 0x01;
       
-      if(twdr1.sendmessage(cmd, message))
-      //if(twdr1.sendmessage(message))
+      //if(twdr1.sendmessage(cmd, message))
+      if(twdr1.sendmessage(message))
       {
-        //Serial.print("# Success sending message '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
-        Serial.print("## Success sending cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
-      }
-      else
-      {
-        delay(random(500));
-        //Serial.print("## CAUTION!! LOST MESSAGE '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n");
-        Serial.print("## CAUTION!! LOST MESSAGE cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
-        failedmessagecounter1++;
+        Serial.print("# Success sending message to buffer '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter2+")\n\n");
+        //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
       }
       latesttimer=millis();
       message++;

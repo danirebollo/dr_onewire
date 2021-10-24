@@ -3,11 +3,13 @@
 
 #include <Arduino.h>
 
-
+#define messagebufflen 10
 #define ACKMESSAGE 222
 
 class dr_onewire
 {
+
+
 
 const int messagesymbolms = 30;
 
@@ -29,8 +31,12 @@ private:
     void showbuffercontent();
     uint8_t isbufferempty();
     void emptybuffer();
+
 public:
     typedef uint16_t onewiremessage;
+    onewiremessage messagebuff[messagebufflen];
+    uint8_t messagebuffpos=0;
+    
     int pin1;
     onewiremessage loopmessage;
     String name0="";
@@ -49,6 +55,10 @@ public:
     void isr(); //static
     uint8_t getbuffersize();
     unsigned long gettimesincefirstisr();
+    bool sendmessage_addtobuff(onewiremessage message);
+    bool sendmessage_getfrombuff(onewiremessage *message);
+    uint8_t sendmessage_getbuffpos();
+    bool sendmessage_r(onewiremessage message);
 };
 
 #endif
