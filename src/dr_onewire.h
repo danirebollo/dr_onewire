@@ -22,7 +22,7 @@ unsigned long tolerance = messagesymbolms / 3;
 
 private:
     void detachinterrupt();
-    void setpin2inputpullup();
+    void setpin2input();
     void setpin2outputopendrain();
     
     void setpinlow();
@@ -46,7 +46,7 @@ public:
     uint8_t buffercounter_low = 0;
     void (*isrcallback) (void);
     void (*receivedmessagecallback) (onewiremessage);
-    void init(String name, uint8_t wrpin,void (*f)(void),void (*f2)(onewiremessage));
+    void init(String name, uint8_t wrpin,void (*f)(void),void (*f2)(onewiremessage), uint8_t inputmode0=INPUT);
     void sendmessage_raw(onewiremessage message);
     bool sendmessage(onewiremessage message);
     bool sendmessage(uint8_t cmd, uint8_t message);

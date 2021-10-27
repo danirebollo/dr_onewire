@@ -6,9 +6,9 @@ void dr_onewire::detachinterrupt()
     detachInterrupt(pin1);
 }
 
-void dr_onewire::setpin2inputpullup()
+void dr_onewire::setpin2input()
 {
-    pinMode(pin1, INPUT_PULLUP);
+    pinMode(pin1, inputmode);
 }
 void dr_onewire::setpin2outputopendrain()
 {
@@ -33,14 +33,15 @@ void dr_onewire::emptybuffer()
     buffercounter_high = 0;
         buffercounter_low = 0;
 }
-void dr_onewire::init(String name, uint8_t wrpin, void (*f)(void),void (*f2)(onewiremessage))
+void dr_onewire::init(String name, uint8_t wrpin, void (*f)(void),void (*f2)(onewiremessage), uint8_t inputmode0)
 {
+    inputmode=inputmode0; //INPUT, INPUT_PULLUP
     isrcallback=*f;
     receivedmessagecallback=*f2;
     currentclass=this;
     name0=name;
     pin1=wrpin;
-    setpin2inputpullup();
+    setpin2input();
     isrcallback();
 }
 
@@ -117,8 +118,7 @@ void dr_onewire::sendmessage_raw(onewiremessage message)
     setpinlow();
     delay(messagesymbolms);
 
-    setpinhigh();
-    setpin2inputpullup();
+    setpin2input();
     isrcallback();
 }
 

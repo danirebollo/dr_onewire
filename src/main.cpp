@@ -66,7 +66,7 @@ void setup()
   Serial.print("setup() running on core ");
   Serial.println(xPortGetCoreID());
 
-  twdr1.init("twdr1",pin01,attach01,receivedmessagecallback1);
+  twdr1.init("twdr1",pin01,attach01,receivedmessagecallback1,INPUT_PULLUP);
   twdr2.init("twdr2",pin02,attach02,receivedmessagecallback2);
 
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
