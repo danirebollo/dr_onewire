@@ -6,6 +6,7 @@ TaskHandle_t Task1;
 TaskHandle_t Task2;
 void Task1code(void *pvParameters);
 void Task2code(void *pvParameters);
+void Task3code(void *pvParameters);
 
 //digitalWrite(pin02, HIGH);
 //delay(1000);
@@ -88,6 +89,14 @@ void setup()
       1,         /* priority of the task */
       &Task2,    /* Task handle to keep track of created task */
       1);        /* pin task to core 1 */
+    xTaskCreatePinnedToCore(
+      Task3code, /* Task function. */
+      "Task3",   /* name of task. */
+      10000,     /* Stack size of task */
+      NULL,      /* parameter of the task */
+      1,         /* priority of the task */
+      &Task2,    /* Task handle to keep track of created task */
+      1);        /* pin task to core 1 */
   delay(500);
 }
 
@@ -108,17 +117,17 @@ uint16_t message = 1;
   for (;;)
   {
     twdr2.loop();
-    if(latesttimer+(random(1000)+500)<millis())
-    {
-      
-      if(twdr2.sendmessage(message))
-      {
-        Serial.print("# Success sending message to buffer '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
-      
-      }
-      message++;
-      latesttimer=millis();
-    }
+    //if(latesttimer+(random(1000)+500)<millis())
+    //{
+    //  
+    //  if(twdr2.sendmessage(message))
+    //  {
+    //    Serial.print("# Success sending message to buffer '"+(String)message+"' from twdr2 to twdr1 failedcounter("+(String)failedmessagecounter2+")\n\n");
+    //  
+    //  }
+    //  message++;
+    //  latesttimer=millis();
+    //}
     //delay(random(1000));
   }
 }
@@ -136,18 +145,75 @@ uint16_t message = 350;
   {
     //delay(200);
     twdr1.loop();
-    if(latesttimer+(random(1000)+1000)<millis())
-    {
-      uint8_t cmd = 0x01;
-      
-      //if(twdr1.sendmessage(cmd, message))
-      if(twdr1.sendmessage(message))
-      {
-        Serial.print("# Success sending message to buffer '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter2+")\n\n");
-        //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
-      }
-      latesttimer=millis();
-      message++;
-    }
+    //if(latesttimer+(random(1000)+1000)<millis())
+    //{
+    //  uint8_t cmd = 0x01;
+    //  
+    //  //if(twdr1.sendmessage(cmd, message))
+    //  if(twdr1.sendmessage(message))
+    //  {
+    //    Serial.print("# Success sending message to buffer '"+(String)message+"' from twdr1 to twdr2 failedcounter("+(String)failedmessagecounter2+")\n\n");
+    //    //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
+    //  }
+    //  latesttimer=millis();
+    //  message++;
+    //}
   }
+}
+
+void Task3code(void *pvParameters)
+{
+  String myString;
+  while(1)
+  {
+    if(Serial.available())
+    {
+        myString = Serial.readString();
+        myString.trim();
+        Serial.println("Readed: "+(String)myString);
+
+        if(myString=="A")
+        {
+          while(!(Serial.available()>0))
+          {
+
+          }
+          delay(500);
+          
+            myString = Serial.readString();
+            myString.trim();
+            Serial.println("message: "+(String)myString);
+
+            if(twdr1.sendmessage(myString.toInt()))
+            {
+              Serial.print("# Success sending message to buffer '"+(String)myString+"' from twdr1 to twdr2 \n\n");
+              //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
+            }
+          
+        
+        }
+        else if(myString=="B")
+        {
+          while(!(Serial.available()>0))
+          {
+
+          }
+          delay(500);
+          
+            myString = Serial.readString();
+            myString.trim();
+            Serial.println("Readed: "+(String)myString);
+
+            if(twdr2.sendmessage(myString.toInt()))
+            {
+              Serial.print("# Success sending message to buffer '"+(String)myString+"' from twdr1 to twdr2 \n\n");
+              //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
+            }
+          
+        
+        }
+    }
+    delay(1000);
+  }
+  
 }
