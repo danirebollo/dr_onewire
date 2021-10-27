@@ -3,9 +3,11 @@
 
 #include <Arduino.h>
 
+#define ENABLEPULLUPS
 #define messagebufflen 10
 #define ACKMESSAGE 222
 
+#define PACKETSIZE (((1*8)*2)+1+2+3) //sizeof(onewiremessage)=1B
 class dr_onewire
 {
 
@@ -13,10 +15,10 @@ class dr_onewire
 
 const int messagesymbolms = 30;
 
-
+uint8_t inputmode=0;
 bool status = false;
 bool pinstatus = false;
-unsigned long readtimer = (20 * messagesymbolms);
+unsigned long readtimer = (PACKETSIZE*2 * messagesymbolms);
 unsigned long tolerance = messagesymbolms / 3;
 
 
@@ -31,6 +33,8 @@ private:
     void showbuffercontent();
     uint8_t isbufferempty();
     void emptybuffer();
+    void setpinlowRAW();
+    void setpinhighRAW();
 
 public:
     typedef uint16_t onewiremessage;

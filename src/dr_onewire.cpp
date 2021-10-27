@@ -14,13 +14,28 @@ void dr_onewire::setpin2outputopendrain()
 {
     pinMode(pin1, OUTPUT_OPEN_DRAIN);
 }
-void dr_onewire::setpinlow()
+void dr_onewire::setpinlowRAW()
 {
     digitalWrite(pin1, LOW);
 }
-void dr_onewire::setpinhigh()
+void dr_onewire::setpinhighRAW()
 {
     digitalWrite(pin1, HIGH);
+}
+
+void dr_onewire::setpinlow()
+{
+    setpinlowRAW();
+    delay(messagesymbolms);
+    setpinhighRAW();
+    delay(messagesymbolms);
+}
+void dr_onewire::setpinhigh()
+{
+    setpinhighRAW();
+    delay(messagesymbolms);
+    setpinlowRAW();
+    delay(messagesymbolms);
 }
 bool dr_onewire::getpinstatus()
 {
@@ -81,43 +96,65 @@ void dr_onewire::sendmessage_raw(onewiremessage message)
     detachinterrupt();
     setpin2outputopendrain();
     //Start bits /sync
-    setpinlow();
+    //Serial.print("SENDING BIN: '");
+    //Serial.print(message,BIN);
+    Serial.print("sendmessage_raw:: '"+(String)message+"'\n");
+    //Serial.print("START: GO LOW 0 2T\n");
+    setpinlowRAW();
     delay(messagesymbolms * 2);
-    setpinhigh();
+    //Serial.print("GO HIGH 1 1T\n");
+    setpinhighRAW();
     delay(messagesymbolms);
 
     //sending 8b data
     uint8_t parity = 0;
+    //Serial.print("Sending: ");
+    //    for (uint8_t i = 0; i < (sizeof(onewiremessage)*8); i++)
+    //{
+    //    Serial.print((String)bitRead(message, (sizeof(onewiremessage)*8)-1 - i));
+    //}
+    //Serial.print("\nENC: ");
     for (uint8_t i = 0; i < (sizeof(onewiremessage)*8); i++)
     {
         if (bitRead(message, (sizeof(onewiremessage)*8)-1 - i))
         {
+            //Serial.print("10 ");
             setpinhigh();
-            delay(messagesymbolms);
+            //delay(messagesymbolms);
             parity++;
         }
         else
         {
+            //Serial.print("01 ");
             setpinlow();
-            delay(messagesymbolms);
+            //delay(messagesymbolms);
         }
     }
-
+    //Serial.print("\n");
+    //Serial.print("Parity: ");
     //calculate parity bit
     if ((parity % 2) == 0) //par
     {
+    //    Serial.print("1 (10) ");
         setpinhigh();
     }
     else
     {
+    //    Serial.print("0 (01) ");
         setpinlow();
     }
-    delay(messagesymbolms);
+    //sending ACK
+    setpinlow();
+
+    //delay(messagesymbolms);
 
     //Stop bit
-    setpinlow();
+    //Serial.print("STOP BIT 0\n");
+    setpinlowRAW();
     delay(messagesymbolms);
 
+    //Serial.print("GO HIGH 1\n");
+    setpinhighRAW();
     setpin2input();
     isrcallback();
 }
@@ -131,11 +168,14 @@ bool dr_onewire::readmessage_raw(onewiremessage *message)
         //Serial.print("("+(String)pin1+") readmessage_raw disabling ISR \nreading message\n");
         detachinterrupt();
         bool status = false;
-        bool resultarray[(sizeof(onewiremessage)*8)+1+2+3]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
+        bool resultarray[((sizeof(onewiremessage)*8)*2)+1+2+3]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
+        bool resultarray2[((sizeof(onewiremessage)*8)*2)+2]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
         uint8_t racounter = 0;
+        uint8_t ms=(buffer[1] - buffer[0])/2;
+        //uint8_t messagesize=0;
         for (uint8_t j = buffercounter_low + 1; j < buffercounter_high; j++)
         {
-            unsigned long symbol = ((buffer[j] - buffer[j - 1]) + tolerance) / messagesymbolms;
+            unsigned long symbol = ((buffer[j] - buffer[j - 1]) + tolerance) / ms;
 
             for (uint8_t k = 0; k < symbol; k++)
             {
@@ -152,37 +192,70 @@ bool dr_onewire::readmessage_raw(onewiremessage *message)
         }
         */
        // Serial.print("]\n");
+       //Serial.print("Reading: \nStart: "+(String)resultarray[0]+(String)resultarray[1]+(String)resultarray[2]+"\n");
         if (!(resultarray[0] == 0 && resultarray[1] == 0 && resultarray[2] == 1))
         {
-            //Serial.print("Start NOK \n");
+            Serial.print("Start NOK \n");
             result=false;
         }
         
 
-        onewiremessage aVal = 0;    
+        onewiremessage aVal = 0;   
+         uint8_t parity=0;
         //Serial.print("Readed bits: ");
-        uint8_t parity=0;
-        for (uint8_t i = 0; i < (sizeof(onewiremessage)*8); i++)
+        //
+        //for (uint8_t i = 0; i < ((sizeof(onewiremessage)*8)*2); i++)
+        //{
+        //    //aVal = aVal << 1 | resultarray[i + 3];
+        //    Serial.print((String)resultarray[i + 3] + "");
+        //    //if(resultarray[i + 3]==1)
+        //    //parity++;
+        //}
+        //Serial.print(" \n");
+
+        //Serial.print("Readed bits2: ");
+
+        for (uint8_t i = 0; i < ((sizeof(onewiremessage)*8)*2); )
         {
-            aVal = aVal << 1 | resultarray[i + 3];
-            //Serial.print((String)resultarray[i + 3] + "");
-            if(resultarray[i + 3]==1)
+            bool value=false;
+            if(resultarray[i + 3]==true&&resultarray[i +1 + 3]==false)
+                resultarray2[i]=1;
+            else if (resultarray[i + 3]==false&&resultarray[i +1 + 3]==true)
+                resultarray2[i]=0;
+            else
+                Serial.print(" (i: "+(String)i+")[CAUTION!! ERROR DECODING] ("+(String)resultarray[i + 3]+(String)resultarray[i +1+ 3]+")");
+            
+        //    Serial.print((String)resultarray2[i] );
+
+            aVal = aVal << 1 | resultarray2[i];
+            //Serial.print((String)resultarray2[i + 3] + "");
+            if(resultarray2[i]==1)
             parity++;
+i++;
+i++;
         }
         //Serial.print(" \n");
 
-        //Serial.print("Readed Data: " + (String)aVal + "\n");
+        Serial.print("readmessage_raw:: Readed Data: " + (String)aVal + "\n");
         *message=aVal;
 
         //Serial.print("("+(String)pin1+") Readed Data: " + (String)aVal + "/ "+(String)*message+"\n");
         
         //Serial.print("PARITY READED: "+(String)resultarray[(sizeof(onewiremessage)*8)+3]+", calculated: "+parity+" ("+(String)(parity % 2)+") \n");
 
-        if ((!(parity % 2)) != resultarray[(sizeof(onewiremessage)*8)+3])
+        if ((!(parity % 2)) != resultarray[((sizeof(onewiremessage)*8)*2)+3])
         {
-           //Serial.print("PARITY NOK\n");
+           Serial.print("PARITY NOK\n");
            result=false;
         }
+        if (resultarray[((sizeof(onewiremessage)*8)*2)+3+1]==1)
+        {
+           Serial.print("ACK\n");
+        }
+        else
+        Serial.print("NOT ACK\n");
+        //else
+        //Serial.print("PARITY OK\n");
 
         //Serial.print("\n");
         
