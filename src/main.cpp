@@ -117,6 +117,8 @@ uint16_t message = 1;
   for (;;)
   {
     twdr2.loop();
+
+    //delay(5000);
     //if(latesttimer+(random(1000)+500)<millis())
     //{
     //  
@@ -145,6 +147,7 @@ uint16_t message = 350;
   {
     //delay(200);
     twdr1.loop();
+    //delay(5000);
     //if(latesttimer+(random(1000)+1000)<millis())
     //{
     //  uint8_t cmd = 0x01;

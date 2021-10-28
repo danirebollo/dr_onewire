@@ -6,8 +6,10 @@
 #define ENABLEPULLUPS
 #define messagebufflen 10
 #define ACKMESSAGE 222
-
+#define RXACKTIMEOUT 10000
+#define TXACKTIMEOUT 10000
 #define PACKETSIZE (((1*8)*2)+1+2+3) //sizeof(onewiremessage)=1B
+#define WAITUNTILREAD 500
 class dr_onewire
 {
 
@@ -35,16 +37,28 @@ private:
     void emptybuffer();
     void setpinlowRAW();
     void setpinhighRAW();
-
+    bool ismessagewaitingforack();
+    unsigned long gettimefromlastisr();
 public:
     typedef uint16_t onewiremessage;
-    
+
     struct messagestruct
 {
     onewiremessage message;
     uint8_t retrycounter=0;
+    bool parity=0;
+    bool ack=0;
 };
-    onewiremessage messagebuff[messagebufflen];
+
+struct txmessagestruct
+{
+    messagestruct message;
+    bool waitingforack=0;
+    unsigned long txtimestamp=0;
+};
+
+txmessagestruct txmsg1;
+    messagestruct messagebuff[messagebufflen];
     uint8_t messagebuffpos=0;
     
     int pin1;
@@ -65,10 +79,10 @@ public:
     void isr(); //static
     uint8_t getbuffersize();
     unsigned long gettimesincefirstisr();
-    bool sendmessage_addtobuff(onewiremessage message);
-    bool sendmessage_getfrombuff(onewiremessage *message);
+    bool sendmessage_addtobuff(messagestruct message);
+    bool sendmessage_getfrombuff(messagestruct *message);
     uint8_t sendmessage_getbuffpos();
-    bool sendmessage_r(onewiremessage message);
+    bool sendmessage_r(messagestruct message);
 };
 
 #endif
