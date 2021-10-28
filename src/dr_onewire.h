@@ -38,6 +38,12 @@ private:
 
 public:
     typedef uint16_t onewiremessage;
+    
+    struct messagestruct
+{
+    onewiremessage message;
+    uint8_t retrycounter=0;
+};
     onewiremessage messagebuff[messagebufflen];
     uint8_t messagebuffpos=0;
     

@@ -351,19 +351,25 @@ bool dr_onewire::sendmessage_r(onewiremessage message)
 
    //Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage 1 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
        
-   while(getbuffersize() >1 || !getpinstatus())
+    if(getbuffersize() >1 || !getpinstatus())
    {
-       delay(100);
-       //Serial.print((String)millis()+" - "+"sendmessage ("+(String)pin1+") emptying buffer before sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
-       loop();
-       delay(100);
-       if(timer+20000<millis())
-       {
-           Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+"sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)message+"\n");
            result=false;
-           break;
+    Serial.print((String)millis()+" - "+"sendmessage ("+(String)pin1+") buffer not empty> "+(String)message+". buff: "+(String)getbuffersize()+"\n");
+       
        }
-   }
+   //while(getbuffersize() >1 || !getpinstatus())
+   //{
+   //    delay(100);
+   //    Serial.print((String)millis()+" - "+"sendmessage ("+(String)pin1+") emptying buffer before sendmessage "+(String)messagestruct.message+". buff: "+(String)getbuffersize()+"\n");
+   //    l
+   //    delay(100);
+   //    if(timer+20000<millis())
+   //    {
+   //        Serial.print((String)messagestruct.message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+"sendmessage ("+(String)pin1+") getbuffersize timeout error. message "+(String)messagestruct.message+"\n");
+   //        result=false;
+   //        break;
+   //    }
+   //}
    
     //Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage 2 sendmessage "+(String)message+". buff: "+(String)getbuffersize()+"\n");
 
