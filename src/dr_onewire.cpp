@@ -91,7 +91,7 @@ void dr_onewire::isr()
 }
 
 //send message
-void dr_onewire::sendmessage_raw(onewiremessage message)
+void dr_onewire::sendmessage_raw(onewiremessage message, bool isack)
 {
     detachinterrupt();
     setpin2outputopendrain();
@@ -144,10 +144,12 @@ void dr_onewire::sendmessage_raw(onewiremessage message)
         setpinlow();
     }
     //sending ACK
-    setpinlow();
-
+    if(isack)
+        setpinhigh();
+    else
+        setpinlow();
     //delay(messagesymbolms);
-
+    setpinhigh();
     //Stop bit
     //Serial.print("STOP BIT 0\n");
     setpinlowRAW();
@@ -159,7 +161,7 @@ void dr_onewire::sendmessage_raw(onewiremessage message)
     isrcallback();
 }
 
-bool dr_onewire::readmessage_raw(onewiremessage *message)
+bool dr_onewire::readmessage_raw(onewiremessage *message, bool *isack)
 {
     if (getbuffersize() > 0 && (gettimesincefirstisr() > readtimer))
     {
@@ -168,8 +170,7 @@ bool dr_onewire::readmessage_raw(onewiremessage *message)
         //Serial.print("("+(String)pin1+") readmessage_raw disabling ISR \nreading message\n");
         detachinterrupt();
         bool status = false;
-        bool resultarray[((sizeof(onewiremessage)*8)*2)+1+2+3]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
-        bool resultarray2[((sizeof(onewiremessage)*8)*2)+2]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
+        bool resultarray[((sizeof(onewiremessage)*8)*2)+1+2+3+2]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
         uint8_t racounter = 0;
         uint8_t ms=(buffer[1] - buffer[0])/2;
         //uint8_t messagesize=0;
@@ -214,42 +215,61 @@ bool dr_onewire::readmessage_raw(onewiremessage *message)
         //Serial.print(" \n");
 
         //Serial.print("Readed bits2: ");
+        bool paritybit=0;
+        bool ackbit=0;
+        uint8_t messagebuffersize=(sizeof(onewiremessage)*8*2)+2;
+        uint8_t p = 0;
 
-        for (uint8_t i = 0; i < ((sizeof(onewiremessage)*8)*2); )
+//Serial.print("Decoding: ");
+        while (p < ((messagebuffersize)+1))
         {
+            // Serial.print(" (p:"+(String)p+"/"+(String)(((sizeof(onewiremessage)*8)*2)+4)+")\n");
+
             bool value=false;
-            if(resultarray[i + 3]==true&&resultarray[i +1 + 3]==false)
-                resultarray2[i]=1;
-            else if (resultarray[i + 3]==false&&resultarray[i +1 + 3]==true)
-                resultarray2[i]=0;
+            if(resultarray[p + 3]==true&&resultarray[p +1 + 3]==false)
+                value=1;
+            else if (resultarray[p + 3]==false&&resultarray[p +1 + 3]==true)
+                value=0;
             else
-                Serial.print(" (i: "+(String)i+")[CAUTION!! ERROR DECODING] ("+(String)resultarray[i + 3]+(String)resultarray[i +1+ 3]+")");
+                Serial.print(" (i: "+(String)p+")[CAUTION!! ERROR DECODING] ("+(String)resultarray[p + 3]+(String)resultarray[p +1+ 3]+")");
             
         //    Serial.print((String)resultarray2[i] );
+            //Serial.print("p:"+(String)p+" v:"+(String)value + ", ");
 
-            aVal = aVal << 1 | resultarray2[i];
+            if(p<((sizeof(onewiremessage)*8)*2))
+            {
+              aVal = aVal << 1 | value;  
+              if(value==1 )
+                parity++;
+            }
+            else if(p==((sizeof(onewiremessage)*8)*2))
+                paritybit=value;
+            else if(p==((sizeof(onewiremessage)*8)*2)+2)
+            {
+                Serial.print("\nsetting ack to " + (String)value + "\n");
+                ackbit=value;
+            }            
+
             //Serial.print((String)resultarray2[i + 3] + "");
-            if(resultarray2[i]==1)
-            parity++;
-i++;
-i++;
+            p=p+2;
         }
         //Serial.print(" \n");
 
-        Serial.print("readmessage_raw:: Readed Data: " + (String)aVal + "\n");
+        Serial.print("\nreadmessage_raw:: Readed Data: " + (String)aVal + "\n");
         *message=aVal;
 
         //Serial.print("("+(String)pin1+") Readed Data: " + (String)aVal + "/ "+(String)*message+"\n");
         
         //Serial.print("PARITY READED: "+(String)resultarray[(sizeof(onewiremessage)*8)+3]+", calculated: "+parity+" ("+(String)(parity % 2)+") \n");
 
-        if ((!(parity % 2)) != resultarray[((sizeof(onewiremessage)*8)*2)+3])
+        if ((!(parity % 2)) != paritybit)
         {
            Serial.print("PARITY NOK\n");
            result=false;
         }
-        if (resultarray[((sizeof(onewiremessage)*8)*2)+3+1]==1)
+        if (ackbit)
         {
+            *isack=1;
            Serial.print("ACK\n");
         }
         else
@@ -356,10 +376,11 @@ bool dr_onewire::sendmessage_r(onewiremessage message)
         timer=millis();
         while(!timeout)
         {
-            bool a1=readmessage_raw(&readedmessage);
+            bool isack=false;
+            bool a1=readmessage_raw(&readedmessage, &isack);
             if(a1)
             {
-                if(readedmessage==ACKMESSAGE)
+                if(isack && (readedmessage==message))//readedmessage==ACKMESSAGE)
                 {
                     result=true;
                     break;
@@ -368,7 +389,7 @@ bool dr_onewire::sendmessage_r(onewiremessage message)
                 {
                     //Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage ACK error. received message "+(String)readedmessage+"\n");
                     //Serial.print((String)readedmessage+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage sending ACK."+"\n");            
-                    sendmessage_raw(ACKMESSAGE);  
+                    sendmessage_raw(readedmessage, 1);  
                     receivedmessagecallback(readedmessage);
                     delay(messagesymbolms*8);
                     return false;
@@ -408,12 +429,18 @@ bool dr_onewire::sendmessage_r(onewiremessage message)
 
 bool dr_onewire::loop()
 {
-    if(readmessage_raw(&loopmessage))
+    bool isack;
+    if(readmessage_raw(&loopmessage,&isack))
     {
+        if(!isack)
+        {
         //Serial.print((String)loopmessage+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sending ack \n");  
-        sendmessage_raw(ACKMESSAGE);  
+        sendmessage_raw(loopmessage,1);  
         //Serial.print((String)loopmessage+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+" end receiving message '"+loopmessage+"'\n"); 
         receivedmessagecallback(loopmessage);
+        }
+        else
+            Serial.print("CAUTION, received ACK in loop. NOP.");
     }
     else{
         onewiremessage message;

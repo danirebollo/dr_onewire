@@ -182,14 +182,16 @@ void Task3code(void *pvParameters)
           
             myString = Serial.readString();
             myString.trim();
+            if(myString!="")
+            {
             Serial.println("message: "+(String)myString);
 
             if(twdr1.sendmessage(myString.toInt()))
             {
-              Serial.print("# Success sending message to buffer '"+(String)myString+"' from twdr1 to twdr2 \n\n");
+              //Serial.print("# Success sending message to buffer '"+(String)myString+"' from twdr1 to twdr2 \n\n");
               //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
             }
-          
+            }
         
         }
         else if(myString=="B")
@@ -202,14 +204,15 @@ void Task3code(void *pvParameters)
           
             myString = Serial.readString();
             myString.trim();
+            if(myString!="")
+            {
             Serial.println("Readed: "+(String)myString);
 
             if(twdr2.sendmessage(myString.toInt()))
             {
               Serial.print("# Success sending message to buffer '"+(String)myString+"' from twdr1 to twdr2 \n\n");
-              //Serial.print("## Success sending to buffer cmd: '"+(String)cmd+"', message '"+(String)message+"' from twdr1 to twdr2\n\n");
             }
-          
+            }
         
         }
     }

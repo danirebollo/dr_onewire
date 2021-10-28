@@ -51,10 +51,10 @@ public:
     void (*isrcallback) (void);
     void (*receivedmessagecallback) (onewiremessage);
     void init(String name, uint8_t wrpin,void (*f)(void),void (*f2)(onewiremessage), uint8_t inputmode0=INPUT);
-    void sendmessage_raw(onewiremessage message);
+    void sendmessage_raw(onewiremessage message, bool isack=false);
     bool sendmessage(onewiremessage message);
     bool sendmessage(uint8_t cmd, uint8_t message);
-    bool readmessage_raw(onewiremessage *message);
+    bool readmessage_raw(onewiremessage *message, bool *isack);
     bool loop();
     void isr(); //static
     uint8_t getbuffersize();
