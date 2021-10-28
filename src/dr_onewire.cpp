@@ -147,12 +147,12 @@ void dr_onewire::sendmessage_raw(onewiremessage message, bool isack)
     //calculate parity bit
     if ((parity % 2) == 0) //par
     {
-    //    Serial.print("1 (10) ");
+        //Serial.print("1 (10) ");
         setpinhigh();
     }
     else
     {
-    //    Serial.print("0 (01) ");
+        //Serial.print("0 (01) ");
         setpinlow();
     }
     //sending ACK
@@ -184,7 +184,6 @@ bool dr_onewire::readmessage_raw(onewiremessage *message, bool *isack)
         //Serial.print((String)millis()+" - "+(String)pin1+" - millis: "+(millis())+"\n");
 
         bool result=true;
-        //TODO fix buffer to allow isr...
         detachinterrupt();
         bool status = false;
         bool resultarray[((sizeof(onewiremessage)*8)*2)+1+2+3+2]; //sizeof(onewiremessage)+1+2+3 size: max transitions. 8b=9, start=2, parity+stop=3
@@ -193,7 +192,6 @@ bool dr_onewire::readmessage_raw(onewiremessage *message, bool *isack)
         for (uint8_t j = buffercounter_low + 1; j < buffercounter_high; j++)
         {
             unsigned long symbol = ((buffer[j] - buffer[j - 1]) + tolerance) / ms;
-
             for (uint8_t k = 0; k < symbol; k++)
             {
                 resultarray[racounter] = status;
@@ -201,14 +199,7 @@ bool dr_onewire::readmessage_raw(onewiremessage *message, bool *isack)
             }
             status = !status;
         }
-        /*
-        //Serial.print("readingmessage on "+name0+": bitarray: [");
-        for (uint8_t k = 0; k < WORDSIZE; k++)
-        {
-            //Serial.print("" + (String)resultarray[k] + (String) "");
-        }
-        */
-       // Serial.print("]\n");
+
        //Serial.print("Reading: \nStart: "+(String)resultarray[0]+(String)resultarray[1]+(String)resultarray[2]+"\n");
         if (!(resultarray[0] == 0 && resultarray[1] == 0 && resultarray[2] == 1))
         {
@@ -216,9 +207,8 @@ bool dr_onewire::readmessage_raw(onewiremessage *message, bool *isack)
             result=false;
         }
         
-
         onewiremessage aVal = 0;   
-         uint8_t parity=0;
+        uint8_t parity=0;
         //Serial.print("Readed bits: ");
         //
         //for (uint8_t i = 0; i < ((sizeof(onewiremessage)*8)*2); i++)
@@ -283,14 +273,9 @@ bool dr_onewire::readmessage_raw(onewiremessage *message, bool *isack)
            msg+="ACK, ";
         }
         else
-        msg+="NOT ACK";
-
+            msg+="NOT ACK";
         Serial.println((String)millis()+" - "+(String)pin1+" - "+ msg);
-
         //enabling ISR
-
-        //TODO fix buffer to allow isr...
-        
         isrcallback();
         delay(50);
         emptybuffer();
@@ -309,7 +294,6 @@ bool dr_onewire::sendmessage(uint8_t cmd, uint8_t message)
     return sendmessage(((uint16_t)message << 8) | cmd);
 }
 
-
 bool dr_onewire::sendmessage_addtobuff(messagestruct message)
 {
     messagebuffpos++;
@@ -318,12 +302,11 @@ bool dr_onewire::sendmessage_addtobuff(messagestruct message)
         return false;
     }
     messagebuff[messagebuffpos]=message;
-    
     return true;
 }
+
 bool dr_onewire::sendmessage_getfrombuff(messagestruct *message)
 {
-    
     if(messagebuffpos>0)
     {
         *message=messagebuff[messagebuffpos];
@@ -332,10 +315,12 @@ bool dr_onewire::sendmessage_getfrombuff(messagestruct *message)
     }
     return false;
 }
+
 uint8_t dr_onewire::sendmessage_getbuffpos()
 {
     return messagebuffpos;
 }
+
 bool dr_onewire::sendmessage(onewiremessage message)
 {
     messagestruct ms1;
@@ -350,9 +335,9 @@ bool dr_onewire::sendmessage(onewiremessage message)
 
 bool dr_onewire::ismessagewaitingforack()
 {
-
     return txmsg1.waitingforack;
 }
+
 bool dr_onewire::sendmessage_r(messagestruct message)
 {
     delay(messagesymbolms*8);
@@ -398,7 +383,6 @@ bool dr_onewire::loop()
         }
         else
             Serial.print((String)millis()+" - "+(String)pin1+" - "+ (String)txmsg1.message.message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage LOST MESSAGE (exceed retries)\n"); 
-   
     }
 
     if(readmessage_raw(&loopmessage,&isack))
@@ -429,15 +413,11 @@ bool dr_onewire::loop()
             messagestruct ms1;
             if(sendmessage_getfrombuff(&ms1))
             {
-                //delay(500);
                 Serial.print((String)millis()+" - "+(String)pin1+" - sendmessage_getfrombuff READING: "+(String)ms1.message+"\n");
-                //Serial.print("");
                 sendmessage_r(ms1);
-                //Serial.print((String)message+"\t-\t"+(String)pin1+"\t-\t"+(String)millis()+" - "+(String)pin1+" - sendmessage ERROR 2 message "+(String)message+". buff: "+(String)getbuffersize()+"("+(String)buffercounter_high+"/"+(String)buffercounter_low+"), pinstatus: "+(String)getpinstatus()+"\n");
             }
         }
     }
-    
-    delay(messagesymbolms*8);
+    delay(messagesymbolms*3);
     return true;
 }
